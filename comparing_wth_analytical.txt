@@ -1,0 +1,51 @@
+clear all
+
+lambda = linspace(0.0001,0.001,100);
+side = 1000;
+Area = side.^2;
+Pt = 1;
+Gt = 1;
+Gr = 1;
+Kfa =10;
+alpha = 4;
+no_of_iterations =500;
+Total_interference = zeros(no_of_iterations,1);
+Average_Interference=zeros(length(alpha),1);
+
+rng(1)
+% No fixed random seed
+
+
+for j=1:length(lambda)
+    poisson_input = lambda(j) * Area;
+    no_of_points = poissrnd(poisson_input,1,no_of_iterations);
+
+    for i = 1:no_of_iterations
+
+        x_cd = (2*rand(no_of_points(i),1) - 1) .* side/2;
+        y_cd = (2*rand(no_of_points(i),1) - 1) .* side/2;
+
+        distances = sqrt(x_cd.^2 + y_cd.^2);
+        in_small_radius=find(distances<=250);
+        dist = sort(distances(in_small_radius));
+        
+
+        % Exclude the first point (assumed to be the receiver or primary transmitter)
+        % received_power = Pt * Gt * Gr * (dist(2:end).^(-alpha(j)) .* exp(-Kfa * dist(2:end)));
+        received_power = Pt * Gt * Gr * dist.^(-alpha);
+        Total_interference(i) = sum(received_power);
+    end
+    Average_Interference(j) = mean(Total_interference);
+end
+
+compute_integral=zeros(length(lambda),1);
+
+for m=1:length(lambda)
+    f = @(x) 2*pi*lambda(m)*x.^(1 - alpha);
+    compute_integral(m) =  integral(f,1,250);
+end
+
+figure;
+plot(lambda,Average_Interference);
+hold on
+plot(lambda,compute_integral,'r+');
